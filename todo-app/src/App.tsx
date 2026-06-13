@@ -9,13 +9,17 @@ type Todo = {
 
 export default function TodoApp() {
   // タスクのリストを管理するための状態
-  const [todos,setTodos] = useState<Todo[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   // 入力されたタスクを管理するための状態
   const [inputTodo, setInputTodo] = useState<Todo>({ id: 0, text: "", completed: false });
   
   // 選択されたタスクをリストから削除する関数
   function deleteTodos(){
     setTodos(todos.filter((todo) => !todo.completed));
+  }
+  // Todoリストから個別にタスクを削除する関数
+  function deleteTodo(id: number) {
+    setTodos(todos.filter((todo) => todo.id !== id));
   }
 
   // 入力したタスクをリストに追加する関数
@@ -45,7 +49,8 @@ export default function TodoApp() {
         addTodo={addTodo}
         deleteTodos={deleteTodos} />
       <TodoList todos={todos}
-        checkTodo={checkTodo} />
+        checkTodo={checkTodo}
+        deleteTodo={deleteTodo} />
     </>
   )
 }
@@ -63,7 +68,7 @@ function Form({ inputTodo, setInputTodo, addTodo, deleteTodos }: {
       <input type="text"
         value={inputTodo.text}
         onChange={(e) => setInputTodo({ ...inputTodo, text: e.target.value })}
-        placeholder="タスクを入力"  />
+        placeholder="タスクを入力" />
       <button type="submit">追加</button>
       <button type="button" onClick={deleteTodos}>選択行削除</button>
     </form>
@@ -71,9 +76,10 @@ function Form({ inputTodo, setInputTodo, addTodo, deleteTodos }: {
 }
 
 // タスクのリストを表示するコンポーネント
-function TodoList({ todos, checkTodo }: { 
+function TodoList({ todos, checkTodo, deleteTodo }: { 
   todos: Todo[]; 
-  checkTodo: (id: number, checked: boolean) => void }) {
+  checkTodo: (id: number, checked: boolean) => void;
+  deleteTodo: (id: number) => void;}) {
 
   return (
     <ul>
@@ -81,16 +87,18 @@ function TodoList({ todos, checkTodo }: {
         <TodoItem 
           key={todo.id} 
           todo={todo} 
-          checkTodo={checkTodo} />
+          checkTodo={checkTodo}
+          deleteTodo={deleteTodo} />
       ))}
     </ul>
   )
 }
 
 // タスクのアイテムを表示するコンポーネント
-function TodoItem({ todo, checkTodo }: { 
+function TodoItem({ todo, checkTodo, deleteTodo }: { 
   todo: Todo; 
-  checkTodo: (id: number, checked: boolean) => void}) {
+  checkTodo: (id: number, checked: boolean) => void;
+  deleteTodo: (id: number) => void; }) {
   
   return (
     <li>
@@ -99,7 +107,7 @@ function TodoItem({ todo, checkTodo }: {
         onChange={(e) => checkTodo(todo.id, e.target.checked)} />
       {todo.text}
       <button>変更</button>
-      <button>削除</button>
+      <button onClick={() => deleteTodo(todo.id)}>削除</button>
     </li>
   )
 }
