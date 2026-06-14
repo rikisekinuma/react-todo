@@ -45,8 +45,6 @@ export default function TodoApp() {
     setTodos(todos.map((todo) =>
       todo.id === id ? { ...todo, text } : todo
     ))
-    setEditingId(null);
-    setEditingText("");
   }
 
   return (
