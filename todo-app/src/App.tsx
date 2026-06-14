@@ -12,7 +12,7 @@ export default function TodoApp() {
   const [todos, setTodos] = useState<Todo[]>([]);
   // 入力されたタスクを管理するための状態
   const [inputTodo, setInputTodo] = useState<Todo>({ id: 0, text: "", completed: false });
-  
+
   // 選択されたタスクをリストから削除する関数
   function deleteTodos(){
     setTodos(todos.filter((todo) => !todo.completed));
@@ -40,6 +40,15 @@ export default function TodoApp() {
     ))
   }
 
+  // タスクを編集モードにする関数
+  function update(id: number, text: string){
+    setTodos(todos.map((todo) =>
+      todo.id === id ? { ...todo, text } : todo
+    ))
+    setEditingId(null);
+    setEditingText("");
+  }
+
   return (
     <>
       <h1>Todo App</h1>
@@ -50,7 +59,9 @@ export default function TodoApp() {
         deleteTodos={deleteTodos} />
       <TodoList todos={todos}
         checkTodo={checkTodo}
-        deleteTodo={deleteTodo} />
+        deleteTodo={deleteTodo} 
+        update={update}
+      />
     </>
   )
 }
@@ -76,10 +87,12 @@ function Form({ inputTodo, setInputTodo, addTodo, deleteTodos }: {
 }
 
 // タスクのリストを表示するコンポーネント
-function TodoList({ todos, checkTodo, deleteTodo }: { 
+function TodoList({ todos, checkTodo, deleteTodo, update }: { 
   todos: Todo[]; 
   checkTodo: (id: number, checked: boolean) => void;
-  deleteTodo: (id: number) => void;}) {
+  deleteTodo: (id: number) => void;
+  update: (id: number, text: string) => void;
+ }) {
 
   return (
     <ul>
@@ -88,26 +101,57 @@ function TodoList({ todos, checkTodo, deleteTodo }: {
           key={todo.id} 
           todo={todo} 
           checkTodo={checkTodo}
-          deleteTodo={deleteTodo} />
+          deleteTodo={deleteTodo}
+          update={update} />
       ))}
     </ul>
   )
 }
 
 // タスクのアイテムを表示するコンポーネント
-function TodoItem({ todo, checkTodo, deleteTodo }: { 
+function TodoItem({ todo, checkTodo, deleteTodo, update }: { 
   todo: Todo; 
   checkTodo: (id: number, checked: boolean) => void;
-  deleteTodo: (id: number) => void; }) {
-  
+  deleteTodo: (id: number) => void;
+  update: (id: number, text: string) => void;
+ }) {
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingText, setEditingText] = useState(todo.text);
+
+  function startEdit() {
+    setIsEditing(true);
+    setEditingText(todo.text);
+  }
+
+  function saveEdit(id: number, text: string) {
+    update(id, text);
+    setIsEditing(false);
+  }
+
+  function cancelEdit() {
+    setIsEditing(false);
+    setEditingText(todo.text);
+  }
+
   return (
     <li>
       <input type="checkbox" 
         checked={todo.completed} 
         onChange={(e) => checkTodo(todo.id, e.target.checked)} />
-      {todo.text}
-      <button>変更</button>
-      <button onClick={() => deleteTodo(todo.id)}>削除</button>
+      {isEditing ? (
+        <>  
+          <input value={editingText} onChange={(e) => setEditingText(e.target.value)} />
+          <button onClick={() => saveEdit(todo.id, editingText)}>変更を保存</button>
+          <button onClick={() => cancelEdit()}>キャンセル</button>
+        </>
+      ) : (
+        <>
+          {todo.text}
+          <button onClick={() => startEdit()}>変更</button>
+          <button onClick={() => deleteTodo(todo.id)}>削除</button>
+        </>
+      )}
     </li>
   )
 }
