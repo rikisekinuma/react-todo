@@ -12,7 +12,9 @@ export default function TodoApp() {
   const [todos, setTodos] = useState<Todo[]>([]);
   // 入力されたタスクを管理するための状態
   const [inputTodo, setInputTodo] = useState<Todo>({ id: 0, text: "", completed: false });
-
+  // 全選択状態を取得
+  const isCheckedAll = todos.length > 0 && todos.every((todo) => todo.completed);
+  
   // 選択されたタスクをリストから削除する関数
   function deleteTodos(){
     setTodos(todos.filter((todo) => !todo.completed));
@@ -41,10 +43,17 @@ export default function TodoApp() {
   }
 
   // タスクを編集モードにする関数
-  function update(id: number, text: string){
+  function update(id: number, text: string) {
     setTodos(todos.map((todo) =>
       todo.id === id ? { ...todo, text } : todo
     ))
+  }
+
+  // 全選択する関数
+  function changeCheckedAll(checked: boolean) {
+    setTodos(todos.map((todo) => (
+      { ...todo, completed: checked }
+    )));
   }
 
   return (
@@ -54,7 +63,10 @@ export default function TodoApp() {
         inputTodo={inputTodo} 
         setInputTodo={setInputTodo} 
         addTodo={addTodo}
-        deleteTodos={deleteTodos} />
+        deleteTodos={deleteTodos} 
+        changeCheckedAll={changeCheckedAll}
+        isCheckedAll={isCheckedAll}
+      />
       <TodoList todos={todos}
         checkTodo={checkTodo}
         deleteTodo={deleteTodo} 
@@ -65,11 +77,13 @@ export default function TodoApp() {
 }
 
 // 入力フォームのコンポーネント
-function Form({ inputTodo, setInputTodo, addTodo, deleteTodos }: { 
+function Form({ inputTodo, setInputTodo, addTodo, deleteTodos, changeCheckedAll, isCheckedAll }: { 
   inputTodo: Todo; 
   setInputTodo: React.Dispatch<React.SetStateAction<Todo>>; 
   addTodo: (e: React.FormEvent<HTMLFormElement>) => void;
   deleteTodos: () => void;
+  changeCheckedAll: (checked: boolean) => void;
+  isCheckedAll: boolean;
  }) {
 
   return (
@@ -80,6 +94,11 @@ function Form({ inputTodo, setInputTodo, addTodo, deleteTodos }: {
         placeholder="タスクを入力" />
       <button type="submit">追加</button>
       <button type="button" onClick={deleteTodos}>選択行削除</button>
+      {isCheckedAll ? (
+         <button type="button" onClick={() => changeCheckedAll(false)}>選択解除</button>
+        ) : (
+         <button type="button" onClick={() => changeCheckedAll(true)}>全選択</button>  
+      )}
     </form>
   )
 }
