@@ -5,16 +5,21 @@ type Todo = {
     id: number;
     text: string;
     completed: boolean;
+    dueDate:string;
   }
 
 export default function TodoApp() {
   // タスクのリストを管理するための状態
   const [todos, setTodos] = useState<Todo[]>([]);
   // 入力されたタスクを管理するための状態
-  const [inputTodo, setInputTodo] = useState<Todo>({ id: 0, text: "", completed: false });
+  const [inputTodo, setInputTodo] = useState<Todo>({ id: 0, text: "", completed: false, dueDate: "" });
   // 全選択状態を取得
   const isCheckedAll = todos.length > 0 && todos.every((todo) => todo.completed);
-  
+  // 作成日のソートフラグ
+  const [sortedByCreated, setSortedByCreated] = useState<boolean>(true);
+  // 期日順ソートフラグ
+  const [sortedByDueDate, setSortedByDueDate] = useState<boolean>(false);
+
   // 選択されたタスクをリストから削除する関数
   function deleteTodos(){
     setTodos(todos.filter((todo) => !todo.completed));
@@ -32,7 +37,7 @@ export default function TodoApp() {
 
     // 今あるTodosを全部コピーして、inputTodoを追加したものを新しいTodosとしてセットする
     setTodos([...todos, { ...inputTodo, id: Date.now() }]);
-    setInputTodo({ id: 0, text: "", completed: false });
+    setInputTodo({ id: 0, text: "", completed: false, dueDate: "" });
   }
 
   // チェックボックスの状態を変更する関数
@@ -43,9 +48,9 @@ export default function TodoApp() {
   }
 
   // タスクを編集モードにする関数
-  function update(id: number, text: string) {
+  function update(id: number, text: string, dueDate: string) {
     setTodos(todos.map((todo) =>
-      todo.id === id ? { ...todo, text } : todo
+      todo.id === id ? { ...todo, text, dueDate } : todo
     ))
   }
 
@@ -55,6 +60,47 @@ export default function TodoApp() {
       { ...todo, completed: checked }
     )));
   }
+
+  // 作成日昇順ソート関数
+  function sortByCreatedAsc() {
+    setTodos([...todos].sort((a, b) => a.id - b.id));
+  }
+
+  // 作成日降順ソート関数
+  function sortByCreatedDesc() {
+    setTodos([...todos].sort((a, b) => b.id - a.id));
+  }
+
+  // 作成日ソート関数
+  function sortByCreated() {
+    if(!sortedByCreated) {
+      sortByCreatedAsc();
+    } else {
+      sortByCreatedDesc();
+    }
+    setSortedByCreated(!sortedByCreated);
+  }
+
+  // 期日順昇順ソート関数
+  function sortByDueDateAsc() {
+    setTodos([...todos].sort((a, b) => a.dueDate.localeCompare(b.dueDate)));
+  }
+
+  // 期日順降順ソート関数
+  function sortByDueDateDesc() {
+    setTodos([...todos].sort((a, b) => b.dueDate.localeCompare(a.dueDate)));
+  }
+
+  // 期日順ソート関数
+  function sortByDueDate() {
+    if(!sortedByDueDate) {
+      sortByDueDateAsc();
+    } else {
+      sortByDueDateDesc();
+    }
+    setSortedByDueDate(!sortedByDueDate);
+  }
+
 
   return (
     <>
@@ -66,6 +112,8 @@ export default function TodoApp() {
         deleteTodos={deleteTodos} 
         changeCheckedAll={changeCheckedAll}
         isCheckedAll={isCheckedAll}
+        sortByCreated={sortByCreated}
+        sortByDueDate={sortByDueDate}
       />
       <TodoList todos={todos}
         checkTodo={checkTodo}
@@ -77,13 +125,16 @@ export default function TodoApp() {
 }
 
 // 入力フォームのコンポーネント
-function Form({ inputTodo, setInputTodo, addTodo, deleteTodos, changeCheckedAll, isCheckedAll }: { 
+function Form({ inputTodo, setInputTodo, addTodo, deleteTodos, changeCheckedAll, isCheckedAll, sortByCreated, sortByDueDate
+ }: { 
   inputTodo: Todo; 
   setInputTodo: React.Dispatch<React.SetStateAction<Todo>>; 
   addTodo: (e: React.FormEvent<HTMLFormElement>) => void;
   deleteTodos: () => void;
   changeCheckedAll: (checked: boolean) => void;
   isCheckedAll: boolean;
+  sortByCreated: () => void;
+  sortByDueDate: () => void;
  }) {
 
   return (
@@ -91,7 +142,13 @@ function Form({ inputTodo, setInputTodo, addTodo, deleteTodos, changeCheckedAll,
       <input type="text"
         value={inputTodo.text}
         onChange={(e) => setInputTodo({ ...inputTodo, text: e.target.value })}
-        placeholder="タスクを入力" />
+        placeholder="タスクを入力" 
+      />
+      <input 
+        type="date"
+        value={inputTodo.dueDate}
+        onChange={(e) => setInputTodo({ ...inputTodo, dueDate: e.target.value })}
+      />
       <button type="submit">追加</button>
       <button type="button" onClick={deleteTodos}>選択行削除</button>
       {isCheckedAll ? (
@@ -99,6 +156,9 @@ function Form({ inputTodo, setInputTodo, addTodo, deleteTodos, changeCheckedAll,
         ) : (
          <button type="button" onClick={() => changeCheckedAll(true)}>全選択</button>  
       )}
+      <br></br>
+      <button type="button" onClick = {sortByCreated}>作成日順</button>
+      <button type="button" onClick = {sortByDueDate}>期日順</button>
     </form>
   )
 }
@@ -108,7 +168,7 @@ function TodoList({ todos, checkTodo, deleteTodo, update }: {
   todos: Todo[]; 
   checkTodo: (id: number, checked: boolean) => void;
   deleteTodo: (id: number) => void;
-  update: (id: number, text: string) => void;
+  update: (id: number, text: string, dueDate: string) => void;
  }) {
 
   return (
@@ -130,25 +190,28 @@ function TodoItem({ todo, checkTodo, deleteTodo, update }: {
   todo: Todo; 
   checkTodo: (id: number, checked: boolean) => void;
   deleteTodo: (id: number) => void;
-  update: (id: number, text: string) => void;
+  update: (id: number, text: string, dueDate: string) => void;
  }) {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingText, setEditingText] = useState(todo.text);
+  const [editingDueDate, setEditingDueDate] = useState(todo.dueDate);
 
   function startEdit() {
     setIsEditing(true);
     setEditingText(todo.text);
+    setEditingDueDate(todo.dueDate);
   }
 
-  function saveEdit(id: number, text: string) {
-    update(id, text);
+  function saveEdit(id: number, text: string, dueDate: string) {
+    update(id, text, dueDate);
     setIsEditing(false);
   }
 
   function cancelEdit() {
     setIsEditing(false);
     setEditingText(todo.text);
+    setEditingDueDate(todo.dueDate);
   }
 
   return (
@@ -158,13 +221,23 @@ function TodoItem({ todo, checkTodo, deleteTodo, update }: {
         onChange={(e) => checkTodo(todo.id, e.target.checked)} />
       {isEditing ? (
         <>  
-          <input value={editingText} onChange={(e) => setEditingText(e.target.value)} />
-          <button onClick={() => saveEdit(todo.id, editingText)}>変更を保存</button>
+          <input 
+            value={editingText} 
+            onChange={(e) => setEditingText(e.target.value)} 
+          />
+          期日: 
+          <input 
+            type="date"
+            value={editingDueDate} 
+            onChange={(e) => setEditingDueDate(e.target.value)} 
+          />
+          <button onClick={() => saveEdit(todo.id, editingText, editingDueDate)}>変更を保存</button>
           <button onClick={() => cancelEdit()}>キャンセル</button>
         </>
       ) : (
         <>
           {todo.text}
+          期日:{todo.dueDate || "未設定"}
           <button onClick={() => startEdit()}>変更</button>
           <button onClick={() => deleteTodo(todo.id)}>削除</button>
         </>
