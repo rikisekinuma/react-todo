@@ -1,11 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import { Form, TodoList } from '.'
 import type { Todo } from './types/Todo'
 
 export default function TodoApp() {
   // タスクのリストを管理するための状態
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todos, setTodos] = useState<Todo[]>(() => {
+    const savedTodos = localStorage.getItem("todos");
+
+    if (savedTodos) {
+      return JSON.parse(savedTodos);
+    }
+
+    return [];
+  });
   // 入力されたタスクを管理するための状態
   const [inputTodo, setInputTodo] = useState<Todo>({ id: 0, text: "", completed: false, dueDate: "" });
   // 全選択状態を取得
@@ -14,6 +22,10 @@ export default function TodoApp() {
   const [sortedByCreated, setSortedByCreated] = useState<boolean>(true);
   // 期日順ソートフラグ
   const [sortedByDueDate, setSortedByDueDate] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }, [todos]);
 
   // 選択されたタスクをリストから削除する関数
   function deleteTodos(){
